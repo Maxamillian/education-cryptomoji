@@ -22,8 +22,12 @@ class Transaction {
    *     other properties, signed with the provided private key
    */
   constructor(privateKey, recipient, amount) {
-    // Enter your solution here
+    this.source = signing.getPublicKey(privateKey);
+    this.recipient = recipient;
+    this.amount = amount;
 
+    const message = this.source + recipient + amount;
+    this.signature = signing.sign(privateKey, message);
   }
 }
 
@@ -44,8 +48,10 @@ class Block {
    *   - hash: a unique hash string generated from the other properties
    */
   constructor(transactions, previousHash) {
-    // Your code here
-
+    this.transactions = transactions;
+    this.previousHash = previousHash;
+    this.nonce = 97732015;
+    this.hash;
   }
 
   /**
@@ -58,8 +64,14 @@ class Block {
    *   properties change.
    */
   calculateHash(nonce) {
-    // Your code here
+    const transactionsHash = this.transactions.reduce((prevHash, transaction) => {
+      const currentHash = createHash('sha512').update(transaction.signature).digest('hex');
+      return createHash('sha512').update(prevHash + currentHash).digest('hex');
+    }, '');
+    const blockHash = createHash('sha512').update(transactionsHash + this.previousHash + nonce).digest('hex');
 
+    this.hash = blockHash;
+    this.nonce = nonce;
   }
 }
 
@@ -79,15 +91,18 @@ class Blockchain {
    */
   constructor() {
     // Your code here
-
+    this.blocks = [{
+      transactions: [],
+      previousHash: null,
+      hash: createHash('sha512').update('randomKey').digest('hex'),
+    }];
   }
 
   /**
    * Simply returns the last block added to the chain.
    */
   getHeadBlock() {
-    // Your code here
-
+    return this.blocks[this.blocks.length - 1];
   }
 
   /**
@@ -95,8 +110,15 @@ class Blockchain {
    * adding it to the chain.
    */
   addBlock(transactions) {
-    // Your code here
+    const previousHash = this.getHeadBlock().hash;
+    const hash = createHash('sha512').update(previousHash + transactions[transactions.length - 1].signature).digest('hex');
+    const block = {
+      transactions,
+      previousHash,
+      hash,
+    };
 
+    this.blocks.push(block);
   }
 
   /**
@@ -109,8 +131,18 @@ class Blockchain {
    *   we make the blockchain mineable later.
    */
   getBalance(publicKey) {
-    // Your code here
+    let balance = 0;
 
+    this.getHeadBlock().transactions.forEach((transaction) => {
+      if (transaction.recipient === publicKey) {
+        balance = transaction.amount;
+      }
+      if (transaction.source === publicKey) {
+        balance -= transaction.amount;
+      }
+    });
+
+    return balance;
   }
 }
 

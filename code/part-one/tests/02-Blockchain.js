@@ -96,6 +96,12 @@ describe('Blockchain module', function() {
 
       block.calculateHash(0);
       expect(block.hash).to.not.equal(originalHash);
+
+      block.transactions.pop();
+      block.transactions.unshift(newTransaction);
+
+      block.calculateHash(0);
+      expect(block.hash).to.not.equal(originalHash);
     });
 
     it('should have different hashes for different prev hashes', function() {
